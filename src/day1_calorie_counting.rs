@@ -18,3 +18,20 @@ pub fn get_heaviest_elf(elves: &Vec<Elf>) -> Option<&Elf> {
         .iter()
         .max_by(|elf1, elf2| elf1.total_calories().cmp(&elf2.total_calories()))
 }
+
+pub fn build_elf_vec(lines: &Vec<String>) -> Vec<Elf> {
+    let mut elves = Vec::new();
+
+    let mut next_elf = Elf::default();
+    for line in lines {
+        if line == "" {
+            elves.push(next_elf);
+            next_elf = Elf::default();
+        } else {
+            let calories_value = line.parse::<i32>().unwrap();
+            next_elf.add_calories(calories_value);
+        }
+    }
+
+    elves
+}
