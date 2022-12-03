@@ -3,5 +3,16 @@
 version = 3
 
 [[package]]
-name = "advent_of_code_2022"
+name = "day1"
+version = "0.1.0"
+dependencies = [
+ "input_reader",
+]
+
+[[package]]
+name = "day2"
+version = "0.1.0"
+
+[[package]]
+name = "input_reader"
 version = "0.1.0"

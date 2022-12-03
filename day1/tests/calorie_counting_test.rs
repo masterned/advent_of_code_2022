@@ -1,4 +1,4 @@
-use advent_of_code_2022::day1_calorie_counting::*;
+use day1::calorie_counting::*;
 
 mod elf_struct {
     use super::*;
