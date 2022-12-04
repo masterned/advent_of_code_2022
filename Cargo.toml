@@ -4,6 +4,7 @@ members = [
   "input_reader",
   "day1",
   "day2",
+  "day3",
 ]
 
-default-members = ["day2"]
+default-members = ["day3"]
