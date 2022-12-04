@@ -5,6 +5,7 @@ members = [
   "day1",
   "day2",
   "day3",
+  "day4",
 ]
 
-default-members = ["day3"]
+default-members = ["day4"]
