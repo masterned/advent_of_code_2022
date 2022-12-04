@@ -39,6 +39,29 @@ impl Ord for Hand {
     }
 }
 
+pub fn get_hand_from_opponent_and_result(opponent: &Hand, result: &RoundResult) -> Hand {
+    use Hand::*;
+    use RoundResult::*;
+
+    match result {
+        Draw => match opponent {
+            Rock => Rock,
+            Paper => Paper,
+            Scissors => Scissors,
+        },
+        Lose => match opponent {
+            Rock => Scissors,
+            Paper => Rock,
+            Scissors => Paper,
+        },
+        Win => match opponent {
+            Rock => Paper,
+            Paper => Scissors,
+            Scissors => Rock,
+        },
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct ParseHandError {}
 
@@ -47,10 +70,32 @@ impl FromStr for Hand {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "A" | "X" => Ok(Hand::Rock),
-            "B" | "Y" => Ok(Hand::Paper),
-            "C" | "Z" => Ok(Hand::Scissors),
-            _ => Err(ParseHandError {}),
+            "A" | "X" => Ok(Self::Rock),
+            "B" | "Y" => Ok(Self::Paper),
+            "C" | "Z" => Ok(Self::Scissors),
+            _ => Err(Self::Err {}),
+        }
+    }
+}
+
+pub enum RoundResult {
+    Lose = 0,
+    Draw = 3,
+    Win = 6,
+}
+
+#[derive(Debug)]
+pub struct ParseRoundResultError {}
+
+impl FromStr for RoundResult {
+    type Err = ParseRoundResultError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "X" => Ok(Self::Lose),
+            "Y" => Ok(Self::Draw),
+            "Z" => Ok(Self::Win),
+            _ => Err(Self::Err {}),
         }
     }
 }
@@ -59,6 +104,16 @@ impl FromStr for Hand {
 pub struct Round(Hand, Hand);
 
 impl Round {
+    pub fn from_hand_hand((hand1, hand2): &(&str, &str)) -> Self {
+        Round(hand1.parse().unwrap(), hand2.parse().unwrap())
+    }
+
+    pub fn from_hand_result((hand, result): &(&str, &str)) -> Self {
+        let opponent: Hand = hand.parse().unwrap();
+        let player = get_hand_from_opponent_and_result(&opponent, &result.parse().unwrap());
+        Round(opponent, player)
+    }
+
     pub fn get_score(&self) -> i32 {
         self.1 as i32
             + (match self.1.cmp(&self.0) {
@@ -78,15 +133,15 @@ impl FromStr for Round {
         let players = s.split(" ").collect::<Vec<&str>>();
 
         if players.len() != 2 {
-            return Err(ParseRoundError {});
+            return Err(Self::Err {});
         }
 
         if let (Some(player1), Some(player2)) = (players.get(0), players.get(1)) {
             let player1 = player1.parse().unwrap();
             let player2 = player2.parse().unwrap();
-            Ok(Round(player1, player2))
+            Ok(Self(player1, player2))
         } else {
-            Err(ParseRoundError {})
+            Err(Self::Err {})
         }
     }
 }
