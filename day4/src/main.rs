@@ -17,14 +17,23 @@ fn main() -> std::io::Result<()> {
         .collect();
     // println!("{assignment_pairs:?}");
 
+    let containment_assignments: Vec<&Vec<Assignment>> = assignment_pairs
+        .iter()
+        .filter(|pair| has_containment(pair.get(0).unwrap(), pair.get(1).unwrap()))
+        .collect();
+    // println!("{containment_assignments:?}");
+
+    let containment_count = containment_assignments.len();
+    println!("Part 1: {containment_count}");
+
     let overlapping_assignments: Vec<&Vec<Assignment>> = assignment_pairs
         .iter()
         .filter(|pair| has_overlap(pair.get(0).unwrap(), pair.get(1).unwrap()))
         .collect();
     // println!("{overlapping_assignments:?}");
 
-    let overlap_count = overlapping_assignments.len();
-    println!("Part 1: {overlap_count}");
+    let overlapping_count = overlapping_assignments.len();
+    println!("Part 2: {overlapping_count}");
 
     Ok(())
 }

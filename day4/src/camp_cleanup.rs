@@ -14,6 +14,11 @@ impl Assignment {
     pub fn contains(&self, other: &Assignment) -> bool {
         self.start <= other.start && self.end >= other.end
     }
+
+    pub fn overlaps_with(&self, other: &Assignment) -> bool {
+        (self.start <= other.start && self.end >= other.start)
+            || (self.start <= other.end && self.end >= other.end)
+    }
 }
 
 pub struct ParseAssignementErr;
@@ -38,6 +43,10 @@ impl FromStr for Assignment {
     }
 }
 
-pub fn has_overlap(a1: &Assignment, a2: &Assignment) -> bool {
+pub fn has_containment(a1: &Assignment, a2: &Assignment) -> bool {
     a1.contains(a2) || a2.contains(a1)
+}
+
+pub fn has_overlap(a1: &Assignment, a2: &Assignment) -> bool {
+    a1.overlaps_with(a2) || a2.overlaps_with(a1)
 }
