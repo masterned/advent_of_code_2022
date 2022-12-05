@@ -20,75 +20,31 @@ mod elf_struct {
 mod elf_functions {
     use super::*;
 
-    mod heaviest {
-        use super::*;
-
-        #[test]
-        fn _vec_with_no_elves_should_return_none() {
-            let nega_elves: Vec<Elf> = Vec::new();
-            assert_eq!(get_heaviest_elf(&nega_elves), None);
-        }
-
-        #[test]
-        fn _vec_with_one_elf_should_return_the_elf() {
-            let elf = Elf::default();
-            let single_elf = vec![Elf::default()];
-
-            assert_eq!(get_heaviest_elf(&single_elf), Some(&elf));
-        }
-
-        #[test]
-        fn _vec_with_multiple_elves_should_return_elf_with_most_calories() {
-            let mut elf1 = Elf::default();
-            elf1.add_calories(1000);
-            elf1.add_calories(2000);
-            elf1.add_calories(3000);
-
-            let mut elf2 = Elf::default();
-            elf2.add_calories(4000);
-
-            let mut elf3 = Elf::default();
-            elf3.add_calories(5000);
-            elf3.add_calories(6000);
-
-            let mut elf4 = Elf::default();
-            elf4.add_calories(7000);
-            elf4.add_calories(8000);
-            elf4.add_calories(9000);
-
-            let mut elf5 = Elf::default();
-            elf5.add_calories(10_000);
-
-            let elves = vec![elf1, elf2, elf3, elf4, elf5];
-
-            let mut heaviest_elf = Elf::default();
-            heaviest_elf.add_calories(7000);
-            heaviest_elf.add_calories(8000);
-            heaviest_elf.add_calories(9000);
-
-            assert_eq!(get_heaviest_elf(&elves), Some(&heaviest_elf));
-        }
-    }
-
     mod top_3 {
         use super::*;
 
         #[test]
-        fn _elf_vec_with_3_elves_should_return_all() {
+        fn _troups_with_3_elves_should_return_all() {
+            let mut troup = Troup::default();
+
             let elf1 = Elf::default();
             let elf2 = Elf::default();
             let elf3 = Elf::default();
 
-            let mut elves = vec![elf1, elf2, elf3];
+            troup.add_elf(elf1);
+            troup.add_elf(elf2);
+            troup.add_elf(elf3);
 
             assert_eq!(
-                get_top_3_heaviest_elves(&mut elves).unwrap(),
+                get_top_3_heaviest_elves(&mut troup),
                 [Elf::default(), Elf::default(), Elf::default()]
             );
         }
 
         #[test]
         fn _should_return_top_3_heaviest_elves() {
+            let mut troup = Troup::default();
+
             let mut elf1 = Elf::default();
             elf1.add_calories(1000);
             elf1.add_calories(2000);
@@ -109,17 +65,15 @@ mod elf_functions {
             let mut elf5 = Elf::default();
             elf5.add_calories(10_000);
 
-            let mut elves = vec![
-                elf1.clone(),
-                elf2.clone(),
-                elf3.clone(),
-                elf4.clone(),
-                elf5.clone(),
-            ];
+            troup.add_elf(elf1);
+            troup.add_elf(elf2);
+            troup.add_elf(elf3.clone());
+            troup.add_elf(elf4.clone());
+            troup.add_elf(elf5.clone());
 
-            let heaviest_3 = { [elf4, elf3, elf5] };
+            let heaviest_3 = vec![elf4, elf3, elf5];
 
-            assert_eq!(get_top_3_heaviest_elves(&mut elves).unwrap(), heaviest_3);
+            assert_eq!(get_top_3_heaviest_elves(&mut troup), heaviest_3);
         }
     }
 
