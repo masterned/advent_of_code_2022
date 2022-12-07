@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Dock {
     stacks: Vec<Vec<char>>,
 }
@@ -11,6 +11,18 @@ impl Dock {
             let value = self.remove_crate(cmd.origin).unwrap();
             self.set_crate(cmd.dest, value);
         }
+    }
+
+    pub fn mv_9001(&mut self, cmd: &Command) {
+        let mut crane = Vec::new();
+        for _ in 0..cmd.qty {
+            crane.push(self.remove_crate(cmd.origin).unwrap());
+        }
+        crane.reverse();
+        self.stacks
+            .get_mut(cmd.dest - 1)
+            .unwrap()
+            .append(&mut crane);
     }
 
     fn remove_crate(&mut self, stack_num: usize) -> Option<char> {
