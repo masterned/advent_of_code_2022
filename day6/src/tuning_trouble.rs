@@ -1,4 +1,4 @@
-fn find_start(length: usize, data: &String) -> usize {
+fn find_start(length: usize, data: &str) -> usize {
     for (index, window) in data
         .chars()
         .collect::<Vec<char>>()
@@ -16,10 +16,10 @@ fn find_start(length: usize, data: &String) -> usize {
     0
 }
 
-pub fn find_start_of_packet(data: &String) -> usize {
+pub fn find_start_of_packet(data: &str) -> usize {
     find_start(4, data)
 }
 
-pub fn find_start_of_message(data: &String) -> usize {
+pub fn find_start_of_message(data: &str) -> usize {
     find_start(14, data)
 }
