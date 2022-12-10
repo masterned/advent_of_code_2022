@@ -17,5 +17,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let count = file_system.total_dir_size_less_than_or_equal_to_100_000();
     println!("Part 1: {count}");
 
+    let free_space = 70_000_000 - file_system.get_total_size();
+    // println!("free space: {free_space}");
+
+    let needed_space = 30_000_000 - free_space;
+    // println!("needed_space: {needed_space}");
+
+    let min_size = file_system.get_minimum_size_with_at_least(needed_space);
+    println!("Part 2: {min_size}");
+
     Ok(())
 }

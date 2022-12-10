@@ -105,6 +105,10 @@ impl FileSystem {
             .total_dir_size_less_than_or_equal_to_100_000()
     }
 
+    pub fn get_minimum_size_with_at_least(&self, size: usize) -> usize {
+        self.root.borrow().get_minimum_size_with_at_least(size)
+    }
+
     pub fn get_total_size(&self) -> usize {
         self.root.borrow().get_total_size()
     }
@@ -204,6 +208,26 @@ impl FileType {
         }
 
         count
+    }
+
+    pub fn get_minimum_size_with_at_least(&self, size: usize) -> usize {
+        let mut minimum_size = usize::MAX;
+
+        let dirs = self.get_dirs();
+
+        for dir in dirs {
+            let dir_size = dir.borrow().get_total_size();
+            if dir_size >= size && dir_size < minimum_size {
+                minimum_size = dir_size;
+            }
+
+            let minimum_contained_size = dir.borrow().get_minimum_size_with_at_least(size);
+            if minimum_contained_size < minimum_size {
+                minimum_size = minimum_contained_size;
+            }
+        }
+
+        minimum_size
     }
 }
 
