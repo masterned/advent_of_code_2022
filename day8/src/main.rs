@@ -24,5 +24,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         .count();
     println!("Part 1: {visible_tree_count}");
 
+    let max_scenic_score = neighbourhood
+        .iter()
+        .map(|(tree, neighbours)| get_scenic_score(*tree, neighbours))
+        .max()
+        .unwrap();
+    println!("Part 2: {max_scenic_score}");
+
     Ok(())
 }

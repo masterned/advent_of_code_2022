@@ -51,6 +51,37 @@ pub fn is_visible(tree: i32, neighbours: &[Vec<i32>]) -> bool {
     neighbours.iter().any(|line| line.iter().all(|&t| t < tree))
 }
 
+fn count_visible_trees(tree: i32, row: &[i32]) -> i32 {
+    let mut visible_count = 0;
+
+    for t in row {
+        visible_count += 1;
+
+        if *t >= tree {
+            break;
+        }
+    }
+
+    visible_count
+}
+
+pub fn get_scenic_score(tree: i32, neighbours: &[Vec<i32>]) -> i32 {
+    let mut left = neighbours[0].clone();
+    left.reverse();
+
+    let right = &neighbours[1];
+
+    let mut up = neighbours[2].clone();
+    up.reverse();
+
+    let down = &neighbours[3];
+
+    count_visible_trees(tree, &left)
+        * count_visible_trees(tree, right)
+        * count_visible_trees(tree, &up)
+        * count_visible_trees(tree, down)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,5 +119,14 @@ mod tests {
             (9, vec![vec![7, 8], Vec::new(), vec![3, 6], Vec::new()]),
         ];
         assert_eq!(create_neighbourhood(&forest), expected_result);
+    }
+
+    #[test]
+    fn _should_calculate_scenic_score() {
+        let neighbours = vec![vec![3, 3], vec![4, 9], vec![3, 5, 3], vec![3]];
+        assert_eq!(get_scenic_score(5, &neighbours), 8);
+
+        let neighbours = vec![vec![2, 5], vec![1, 2], vec![3], vec![3, 5, 3]];
+        assert_eq!(get_scenic_score(5, &neighbours), 4);
     }
 }
