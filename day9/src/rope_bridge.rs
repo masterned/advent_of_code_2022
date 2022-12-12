@@ -1,6 +1,6 @@
 use std::{collections::HashSet, str::FromStr};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Knot {
     position: (i32, i32),
     visited_locations: HashSet<(i32, i32)>,
@@ -60,38 +60,48 @@ impl Default for Knot {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Rope {
-    head: Knot,
-    tail: Knot,
+    knots: Vec<Knot>,
 }
 
 impl Rope {
+    pub fn new(num_knots: usize) -> Self {
+        let mut knots = Vec::with_capacity(num_knots);
+
+        for _ in 0..num_knots {
+            knots.push(Knot::default());
+        }
+
+        Rope { knots }
+    }
+
     pub fn simulate(&mut self, Movement { direction, amount }: &Movement) {
         for _ in 0..*amount {
+            let head = self.knots.first_mut().unwrap();
             match direction {
-                Direction::Up => {
-                    self.head.change_vertical(-1);
-                    self.tail.follow(&self.head);
-                }
-                Direction::Right => {
-                    self.head.change_horizontal(1);
-                    self.tail.follow(&self.head);
-                }
-                Direction::Down => {
-                    self.head.change_vertical(1);
-                    self.tail.follow(&self.head);
-                }
-                Direction::Left => {
-                    self.head.change_horizontal(-1);
-                    self.tail.follow(&self.head);
-                }
+                Direction::Up => head.change_vertical(-1),
+                Direction::Right => head.change_horizontal(1),
+                Direction::Down => head.change_vertical(1),
+                Direction::Left => head.change_horizontal(-1),
+            }
+
+            for i in 1..self.knots.len() {
+                let leader = self.knots[i - 1].clone();
+                self.knots[i].follow(&leader);
             }
         }
     }
 
-    pub fn count_total_tail_visit_location(&self) -> i32 {
-        self.tail.total_visited_locations()
+    pub fn count_total_tail_visited_locations(&self) -> i32 {
+        self.knots.last().unwrap().total_visited_locations()
+    }
+}
+
+impl Default for Rope {
+    fn default() -> Self {
+        let knots = vec![Knot::default(), Knot::default()];
+        Rope { knots }
     }
 }
 
@@ -197,7 +207,7 @@ mod tests {
             amount: 2,
         });
 
-        assert_eq!(rope.count_total_tail_visit_location(), 1);
+        assert_eq!(rope.count_total_tail_visited_locations(), 1);
     }
 
     #[test]
