@@ -50,5 +50,9 @@ name = "day8"
 version = "0.1.0"
 
 [[package]]
+name = "day9"
+version = "0.1.0"
+
+[[package]]
 name = "input_reader"
 version = "0.1.0"
