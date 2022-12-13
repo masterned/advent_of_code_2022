@@ -1,9 +1,8 @@
 use std::{collections::HashSet, str::FromStr};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 struct Knot {
     position: (i32, i32),
-    visited_locations: HashSet<(i32, i32)>,
 }
 
 impl Knot {
@@ -31,38 +30,18 @@ impl Knot {
         } else if other.position == (x - 2, y - 1) || other.position == (x - 1, y - 2) {
             self.position = (x - 1, y - 1);
         }
-
-        self.visited_locations.insert(self.position);
     }
 
-    fn change_horizontal(&mut self, amount: i32) {
-        self.position.0 += amount;
-        self.visited_locations.insert(self.position);
-    }
-
-    fn change_vertical(&mut self, amount: i32) {
-        self.position.1 += amount;
-        self.visited_locations.insert(self.position);
-    }
-
-    fn total_visited_locations(&self) -> i32 {
-        self.visited_locations.len().try_into().unwrap()
-    }
-}
-
-impl Default for Knot {
-    fn default() -> Self {
-        let position = (0, 0);
-        Knot {
-            position,
-            visited_locations: HashSet::from([position]),
-        }
+    fn travel(&mut self, (delta_x, delta_y): (i32, i32)) {
+        self.position.0 += delta_x;
+        self.position.1 += delta_y;
     }
 }
 
 #[derive(Debug)]
 pub struct Rope {
     knots: Vec<Knot>,
+    visited_tail_locations: HashSet<(i32, i32)>,
 }
 
 impl Rope {
@@ -73,35 +52,55 @@ impl Rope {
             knots.push(Knot::default());
         }
 
-        Rope { knots }
+        Rope {
+            knots,
+            visited_tail_locations: HashSet::new(),
+        }
+    }
+
+    fn move_head(&mut self, direction: &Direction) {
+        let head = self.knots.first_mut().unwrap();
+        match direction {
+            Direction::Up => head.travel((0, -1)),
+            Direction::Right => head.travel((1, 0)),
+            Direction::Down => head.travel((0, 1)),
+            Direction::Left => head.travel((-1, 0)),
+        };
     }
 
     pub fn simulate(&mut self, Movement { direction, amount }: &Movement) {
         for _ in 0..*amount {
-            let head = self.knots.first_mut().unwrap();
-            match direction {
-                Direction::Up => head.change_vertical(-1),
-                Direction::Right => head.change_horizontal(1),
-                Direction::Down => head.change_vertical(1),
-                Direction::Left => head.change_horizontal(-1),
-            }
+            self.move_head(direction);
 
             for i in 1..self.knots.len() {
-                let leader = self.knots[i - 1].clone();
+                let leader = self.knots[i - 1];
                 self.knots[i].follow(&leader);
             }
+
+            self.visited_tail_locations.insert(self.get_tail_position());
         }
     }
 
-    pub fn count_total_tail_visited_locations(&self) -> i32 {
-        self.knots.last().unwrap().total_visited_locations()
+    pub fn count_total_tail_visited_locations(&self) -> usize {
+        self.visited_tail_locations.len()
+    }
+
+    pub fn get_head_position(&self) -> (i32, i32) {
+        self.knots.first().unwrap().position
+    }
+
+    pub fn get_tail_position(&self) -> (i32, i32) {
+        self.knots.last().unwrap().position
     }
 }
 
 impl Default for Rope {
     fn default() -> Self {
         let knots = vec![Knot::default(), Knot::default()];
-        Rope { knots }
+        Rope {
+            knots,
+            visited_tail_locations: HashSet::new(),
+        }
     }
 }
 
@@ -169,21 +168,14 @@ mod tests {
     }
 
     #[test]
-    fn _default_knot_should_only_contain_starting_position() {
-        let knot = Knot::default();
-        assert_eq!(knot.visited_locations, HashSet::from([(0, 0)]));
-        assert_eq!(knot.total_visited_locations(), 1);
-    }
-
-    #[test]
     fn _simulation_should_move_head_and_tail() {
         let mut rope = Rope::default();
         rope.simulate(&Movement {
             direction: Direction::Right,
             amount: 3,
         });
-        assert_eq!(rope.head.position, (3, 0));
-        assert_eq!(rope.tail.position, (2, 0));
+        assert_eq!(rope.get_head_position(), (3, 0));
+        assert_eq!(rope.get_tail_position(), (2, 0));
     }
 
     #[test]
@@ -221,7 +213,7 @@ mod tests {
             direction: Direction::Up,
             amount: 2,
         });
-        assert_eq!(rope.tail.position, (1, -1));
+        assert_eq!(rope.get_tail_position(), (1, -1));
 
         let mut rope = Rope::default();
         rope.simulate(&Movement {
@@ -232,6 +224,23 @@ mod tests {
             direction: Direction::Right,
             amount: 2,
         });
-        assert_eq!(rope.tail.position, (1, -1));
+        assert_eq!(rope.get_tail_position(), (1, -1));
+    }
+
+    #[test]
+    fn _tail_should_whip_on_diagonal_jump() {
+        let mut rope = Rope::new(4);
+        rope.simulate(&Movement {
+            direction: Direction::Right,
+            amount: 3,
+        });
+        rope.simulate(&Movement {
+            direction: Direction::Down,
+            amount: 2,
+        });
+
+        assert_eq!(rope.get_head_position(), (3, 2));
+        assert_eq!(rope.get_tail_position(), (1, 1));
+        assert_eq!(rope.count_total_tail_visited_locations(), 2);
     }
 }
