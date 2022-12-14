@@ -6,28 +6,32 @@ struct Knot {
 }
 
 impl Knot {
-    fn follow(&mut self, other: &Self) {
-        if self.position == other.position {
-            return;
-        }
-
+    fn follow(&mut self, leader: &Self) {
         let (x, y) = self.position;
 
-        if other.position == (x, y - 2) {
+        if leader.position == (x, y - 2) {
             self.position = (x, y - 1);
-        } else if other.position == (x + 1, y - 2) || other.position == (x + 2, y - 1) {
+        } else if leader.position == (x + 1, y - 2) || leader.position == (x + 2, y - 1) {
             self.position = (x + 1, y - 1);
-        } else if other.position == (x + 2, y) {
+        } else if leader.position == (x + 2, y) {
             self.position = (x + 1, y)
-        } else if other.position == (x + 2, y + 1) || other.position == (x + 1, y + 2) {
+        } else if leader.position == (x + 2, y + 1) || leader.position == (x + 1, y + 2) {
             self.position = (x + 1, y + 1);
-        } else if other.position == (x, y + 2) {
+        } else if leader.position == (x, y + 2) {
             self.position = (x, y + 1);
-        } else if other.position == (x - 1, y + 2) || other.position == (x - 2, y + 1) {
+        } else if leader.position == (x - 1, y + 2) || leader.position == (x - 2, y + 1) {
             self.position = (x - 1, y + 1);
-        } else if other.position == (x - 2, y) {
+        } else if leader.position == (x - 2, y) {
             self.position = (x - 1, y);
-        } else if other.position == (x - 2, y - 1) || other.position == (x - 1, y - 2) {
+        } else if leader.position == (x - 2, y - 1) || leader.position == (x - 1, y - 2) {
+            self.position = (x - 1, y - 1);
+        } else if leader.position == (x + 2, y + 2) {
+            self.position = (x + 1, y + 1);
+        } else if leader.position == (x - 2, y + 2) {
+            self.position = (x - 1, y + 1);
+        } else if leader.position == (x + 2, y - 2) {
+            self.position = (x + 1, y - 1);
+        } else if leader.position == (x - 2, y - 2) {
             self.position = (x - 1, y - 1);
         }
     }
@@ -46,7 +50,7 @@ pub struct Rope {
 
 impl Rope {
     pub fn new(num_knots: usize) -> Self {
-        let mut knots = Vec::with_capacity(num_knots);
+        let mut knots = Vec::new();
 
         for _ in 0..num_knots {
             knots.push(Knot::default());
@@ -96,11 +100,7 @@ impl Rope {
 
 impl Default for Rope {
     fn default() -> Self {
-        let knots = vec![Knot::default(), Knot::default()];
-        Rope {
-            knots,
-            visited_tail_locations: HashSet::new(),
-        }
+        Self::new(2)
     }
 }
 
@@ -242,5 +242,60 @@ mod tests {
         assert_eq!(rope.get_head_position(), (3, 2));
         assert_eq!(rope.get_tail_position(), (1, 1));
         assert_eq!(rope.count_total_tail_visited_locations(), 2);
+    }
+
+    #[test]
+    fn _test_rope_should_match_example() {
+        let mut rope = Rope::new(10);
+        let movements = vec![
+            Movement {
+                direction: Direction::Right,
+                amount: 5,
+            },
+            Movement {
+                direction: Direction::Up,
+                amount: 8,
+            },
+            Movement {
+                direction: Direction::Left,
+                amount: 8,
+            },
+            Movement {
+                direction: Direction::Down,
+                amount: 3,
+            },
+            Movement {
+                direction: Direction::Right,
+                amount: 17,
+            },
+            Movement {
+                direction: Direction::Down,
+                amount: 10,
+            },
+            Movement {
+                direction: Direction::Left,
+                amount: 25,
+            },
+            Movement {
+                direction: Direction::Up,
+                amount: 20,
+            },
+        ];
+
+        movements.iter().for_each(|movement| {
+            rope.simulate(movement);
+        });
+
+        assert_eq!(
+            rope.get_head_position(),
+            (-11, -15),
+            "head in wrong position"
+        );
+        assert_eq!(
+            rope.get_tail_position(),
+            (-11, -6),
+            "tail in wrong position"
+        );
+        assert_eq!(rope.count_total_tail_visited_locations(), 36);
     }
 }
