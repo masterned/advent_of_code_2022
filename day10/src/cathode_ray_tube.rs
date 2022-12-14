@@ -8,6 +8,7 @@ pub struct CPU {
     x_reg: i32,
     cycle: i32,
     interesting_signal_strengths: HashMap<i32, i32>,
+    display: String,
 }
 
 impl CPU {
@@ -29,19 +30,35 @@ impl CPU {
         }
     }
 
+    fn render_pixel(&mut self) {
+        self.display += if self.cycle % 40 == 0 {
+            "\n"
+        } else if (self.x_reg - 1) <= (self.cycle % 40) && (self.cycle % 40) <= (self.x_reg + 1) {
+            "#"
+        } else {
+            "."
+        };
+    }
+
     pub fn execute(&mut self, instruction: &Instruction) {
         if let Instruction::Addx(amount) = instruction {
             self.cycle += 1;
             self.insert_if_interesting();
             self.x_reg += amount;
+            self.render_pixel();
         }
 
         self.cycle += 1;
         self.insert_if_interesting();
+        self.render_pixel();
     }
 
     pub fn sum_interesting_signal_strengths(&self) -> i32 {
         self.interesting_signal_strengths.values().sum()
+    }
+
+    pub fn get_display(&self) -> &str {
+        &self.display
     }
 }
 
@@ -51,6 +68,7 @@ impl Default for CPU {
             x_reg: 1,
             cycle: 1,
             interesting_signal_strengths: HashMap::new(),
+            display: String::new(),
         }
     }
 }

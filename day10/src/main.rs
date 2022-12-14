@@ -17,5 +17,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         .for_each(|instruction| cpu.execute(instruction));
 
     println!("Part 1: {}", cpu.sum_interesting_signal_strengths());
+
+    let mut cpu = CPU::default();
+    instructions
+        .iter()
+        .for_each(|instruction| cpu.execute(instruction));
+
+    let display = cpu.get_display();
+    println!("Part 2:\n{display}");
+
     Ok(())
 }
