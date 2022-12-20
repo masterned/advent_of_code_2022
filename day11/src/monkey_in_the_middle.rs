@@ -303,10 +303,6 @@ impl Troup {
     }
 }
 
-pub fn divisible_by(value: usize, number: usize) -> bool {
-    number % value == 0
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
