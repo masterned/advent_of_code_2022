@@ -27,6 +27,7 @@ impl Monkey {
             test,
         }
     }
+
     pub fn parse_items(items_line: &str) -> Result<VecDeque<usize>, ParseMonkeyError> {
         let items_line = items_line.trim().replace(',', "");
         let tokens = items_line.split_whitespace().skip(2);
@@ -57,24 +58,42 @@ impl Monkey {
         self.inspection_count
     }
 
+    pub fn get_test_divisible_value(&self) -> usize {
+        self.test.divisible_value
+    }
+
     pub fn receive(&mut self, item: usize) {
         self.items.push_back(item);
     }
 
-    pub fn interact_with(&self, item: usize) -> (usize, usize) {
-        let new_item = self.operation.perform_on(item) / 3;
-
-        let next_monkey = self.test.compare_against(new_item);
-
-        (new_item, next_monkey)
-    }
-
     pub fn take_turn(&mut self) -> VecDeque<(usize, usize)> {
+        let reducer = 3;
         let mut monkey_moves = VecDeque::new();
         for _ in 0..self.items.len() {
             self.inspection_count += 1;
             if let Some(item) = self.items.pop_front() {
-                monkey_moves.push_back(self.interact_with(item));
+                let mut new_item = self.operation.perform_on(item);
+                if new_item > reducer {
+                    new_item /= reducer;
+                }
+                let next_monkey = self.test.compare_against(new_item);
+                monkey_moves.push_back((new_item, next_monkey));
+            }
+        }
+        monkey_moves
+    }
+
+    pub fn take_crazy_turn(&mut self, reducer: usize) -> VecDeque<(usize, usize)> {
+        let mut monkey_moves = VecDeque::new();
+        for _ in 0..self.items.len() {
+            self.inspection_count += 1;
+            if let Some(item) = self.items.pop_front() {
+                let mut new_item = self.operation.perform_on(item);
+                if new_item > reducer {
+                    new_item %= reducer;
+                }
+                let next_monkey = self.test.compare_against(new_item);
+                monkey_moves.push_back((new_item, next_monkey));
             }
         }
         monkey_moves

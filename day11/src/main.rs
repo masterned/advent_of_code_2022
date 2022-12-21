@@ -6,7 +6,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let blocks = input.split("\n\n");
 
-    let monkeys: Vec<Monkey> = blocks.filter_map(|block| block.parse().ok()).collect();
+    let monkeys: Vec<Monkey> = blocks
+        .clone()
+        .filter_map(|block| block.parse().ok())
+        .collect();
     // println!("{monkeys:?}");
 
     let mut troup = Troup::default();
@@ -20,6 +23,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let monkey_business = troup.calculate_monkey_business();
     println!("Part 1: {monkey_business}");
+
+    let monkeys: Vec<Monkey> = blocks.filter_map(|block| block.parse().ok()).collect();
+    let mut troup = Troup::default();
+    for monkey in monkeys {
+        troup.add_monkey(monkey);
+    }
+    troup.play_hard(10_000);
+    let monkey_business = troup.calculate_monkey_business();
+    println!("Part 2: {monkey_business}");
 
     Ok(())
 }
