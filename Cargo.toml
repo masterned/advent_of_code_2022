@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 
 members = [
   "input_reader",
@@ -13,6 +14,6 @@ members = [
   "day9",
   "day10",
   "day11",
+  "day12",
 ]
-
-default-members = ["day11"]
+default-members = ["day12"]
