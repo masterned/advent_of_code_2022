@@ -33,7 +33,7 @@ pub struct Troup {
 }
 
 impl Troup {
-    pub fn new(lines: &Vec<String>) -> Self {
+    pub fn new(lines: &[&str]) -> Self {
         let mut elves = BinaryHeap::new();
 
         let mut next_elf = Elf::default();

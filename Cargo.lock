@@ -4,10 +4,7 @@ version = 3
 
 [[package]]
 name = "day1"
-version = "0.1.0"
-dependencies = [
- "input_reader",
-]
+version = "0.12.0"
 
 [[package]]
 name = "day10"
