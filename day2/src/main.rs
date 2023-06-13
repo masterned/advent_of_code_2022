@@ -1,19 +1,20 @@
-use day2::rock_paper_scissors::*;
-use input_reader::read_file_as_lines;
+use std::{error::Error, fs};
 
-fn main() {
-    let lines = read_file_as_lines("./data/day2.txt").unwrap();
+use day2::rock_paper_scissors::Round;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let file = fs::read_to_string("./data/day2.txt")?;
+    let lines = file.lines();
 
     let pairs: Vec<(&str, &str)> = lines
-        .iter()
         .filter_map(|line| {
-            let pairs = line.split(" ").collect::<Vec<&str>>();
+            let pairs: Vec<&str> = line.split(' ').collect();
 
             if pairs.len() != 2 {
                 return None;
             }
 
-            if let (Some(item1), Some(item2)) = (pairs.get(0), pairs.get(1)) {
+            if let (Some(item1), Some(item2)) = (pairs.first(), pairs.get(1)) {
                 Some((*item1, *item2))
             } else {
                 None
@@ -21,28 +22,31 @@ fn main() {
         })
         .collect();
 
-    let rounds = pairs
+    let total_score: i32 = pairs
         .iter()
-        .map(|pair| Round::from_hand_hand(&pair))
-        .collect::<Vec<Round>>();
-    // println!("{rounds:?}");
-
-    let scores = rounds
-        .iter()
+        .map(|pair| {
+            if let Some(round) = Round::from_hand_hand(pair) {
+                round
+            } else {
+                panic!("Unable to parse both hands")
+            }
+        })
         .map(|round| round.get_score())
-        .collect::<Vec<i32>>();
-    // println!("{scores:?}");
-
-    let total_score: i32 = scores.iter().sum();
+        .sum();
     println!("Part 1: {total_score}");
 
-    let rounds: Vec<Round> = pairs
+    let total_score: i32 = pairs
         .iter()
-        .map(|pair| Round::from_hand_result(&pair))
-        .collect();
-
-    let scores: Vec<i32> = rounds.iter().map(|round| round.get_score()).collect();
-
-    let total_score: i32 = scores.iter().sum();
+        .map(|pair| {
+            if let Some(round) = Round::from_hand_result(pair) {
+                round
+            } else {
+                panic!("Unable to create round")
+            }
+        })
+        .map(|round| round.get_score())
+        .sum();
     println!("Part 2: {total_score}");
+
+    Ok(())
 }
