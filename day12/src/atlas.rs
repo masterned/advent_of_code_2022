@@ -93,9 +93,10 @@ impl Atlas {
     }
 
     fn count_total_points(&self) -> usize {
-        self.altitudes.iter().map(|row| row.len()).sum()
+        self.altitudes.iter().map(Vec::len).sum()
     }
 
+    #[must_use]
     pub fn count_fewest_steps(&self, start: (usize, usize), end: (usize, usize)) -> Option<usize> {
         if !self.contains_point(start) || !self.contains_point(end) {
             return None;

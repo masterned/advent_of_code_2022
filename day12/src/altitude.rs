@@ -9,6 +9,7 @@ pub enum Altitude {
 }
 
 impl Altitude {
+    #[must_use]
     pub fn can_reach(&self, other: &Altitude) -> bool {
         self >= other
             || (match self {
@@ -16,7 +17,7 @@ impl Altitude {
                     Altitude::Start => true,
                     Altitude::End => *self_height >= 26,
                     Altitude::Height(other_height) => *other_height == self_height + 1,
-                    _ => false,
+                    Altitude::None => false,
                 },
                 Altitude::Start => other == &Altitude::Height(1),
                 _ => false,
@@ -122,10 +123,8 @@ mod tests {
         let none1 = Altitude::None;
         let start = Altitude::Start;
 
-        assert!(!(none0 < none1));
-        assert!(!(none0 > none1));
-        assert!(!(none0 < start));
-        assert!(!(none0 > start));
+        assert_eq!(none0.partial_cmp(&none1), None);
+        assert_eq!(none0.partial_cmp(&start), None);
     }
 
     mod can_reach {
