@@ -1,12 +1,12 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::{hash_map::Entry, HashMap, VecDeque};
 
 use crate::altitude::Altitude;
 
 #[derive(Debug)]
 pub struct Atlas {
-    altitudes: Vec<Vec<Altitude>>,
-    pub start: Option<(usize, usize)>,
-    pub end: Option<(usize, usize)>,
+    altitudes: Vec<Vec<Option<Altitude>>>,
+    start: Option<(usize, usize)>,
+    end: Option<(usize, usize)>,
 }
 
 impl From<Vec<&str>> for Atlas {
@@ -32,10 +32,10 @@ impl From<Vec<Vec<char>>> for Atlas {
                 r.iter()
                     .enumerate()
                     .map(|(x, &c)| {
-                        let altitude = Altitude::from(c);
+                        let altitude = Altitude::try_from(c).ok();
                         match altitude {
-                            Altitude::Start => start = Some((x, y)),
-                            Altitude::End => end = Some((x, y)),
+                            Some(Altitude::Start) => start = Some((x, y)),
+                            Some(Altitude::End) => end = Some((x, y)),
                             _ => (),
                         }
                         altitude
@@ -53,30 +53,34 @@ impl From<Vec<Vec<char>>> for Atlas {
 }
 
 impl Atlas {
+    fn get_altitude(&self, (x, y): (usize, usize)) -> Option<Altitude> {
+        *self.altitudes.get(y).and_then(|row| row.get(x))?
+    }
+
     fn get_neighbors_of(&self, (x, y): (usize, usize)) -> Vec<(usize, usize)> {
         let mut neighbors = vec![];
 
-        if let Some(&altitude) = self.altitudes.get(y).and_then(|row| row.get(x)) {
+        if let Some(altitude) = self.get_altitude((x, y)) {
             if y > 0 {
-                if let Some(north) = self.altitudes.get(y - 1).and_then(|row| row.get(x)) {
-                    if altitude.can_reach(north) {
+                if let Some(north) = self.get_altitude((x, y - 1)) {
+                    if altitude.can_reach(&north) {
                         neighbors.push((x, y - 1));
                     }
                 }
             }
-            if let Some(east) = self.altitudes.get(y).and_then(|row| row.get(x + 1)) {
-                if altitude.can_reach(east) {
+            if let Some(east) = self.get_altitude((x + 1, y)) {
+                if altitude.can_reach(&east) {
                     neighbors.push((x + 1, y));
                 }
             }
-            if let Some(south) = self.altitudes.get(y + 1).and_then(|row| row.get(x)) {
-                if altitude.can_reach(south) {
+            if let Some(south) = self.get_altitude((x, y + 1)) {
+                if altitude.can_reach(&south) {
                     neighbors.push((x, y + 1));
                 }
             }
             if x > 0 {
-                if let Some(west) = self.altitudes.get(y).and_then(|row| row.get(x - 1)) {
-                    if altitude.can_reach(west) {
+                if let Some(west) = self.get_altitude((x - 1, y)) {
+                    if altitude.can_reach(&west) {
                         neighbors.push((x - 1, y));
                     }
                 }
@@ -92,46 +96,71 @@ impl Atlas {
             .is_some_and(|row| row.get(x).is_some())
     }
 
-    fn count_total_points(&self) -> usize {
-        self.altitudes.iter().map(Vec::len).sum()
+    pub fn count_fewest_steps_from_start_to_end(&self) -> Result<usize, &'static str> {
+        let start = self.start.ok_or("Unable to find start")?;
+        let end = self.end.ok_or("Unable to find end")?;
+        let result = self
+            .count_fewest_steps(start, end)
+            .ok_or("Unable to find route")?;
+        Ok(result)
     }
 
-    #[must_use]
-    pub fn count_fewest_steps(&self, start: (usize, usize), end: (usize, usize)) -> Option<usize> {
+    fn create_parent_map(
+        &self,
+        start: (usize, usize),
+        end: (usize, usize),
+    ) -> HashMap<(usize, usize), Option<(usize, usize)>> {
+        let mut parents = HashMap::from([(start, None)]);
+
+        let mut next_points = VecDeque::from(vec![start]);
+
+        while !next_points.is_empty() {
+            if let Some(current_point) = next_points.pop_front() {
+                let children = self.get_neighbors_of(current_point);
+
+                for child in children {
+                    if let Entry::Vacant(entry) = parents.entry(child) {
+                        entry.insert(Some(current_point));
+
+                        if child == end {
+                            next_points.clear();
+                            break;
+                        }
+
+                        if !next_points.contains(&child) {
+                            next_points.push_back(child);
+                        }
+                    }
+                }
+            }
+        }
+
+        parents
+    }
+
+    fn count_fewest_steps(&self, start: (usize, usize), end: (usize, usize)) -> Option<usize> {
         if !self.contains_point(start) || !self.contains_point(end) {
             return None;
         }
-
-        let mut steps = 0;
-
-        let mut visited: HashSet<(usize, usize)> = HashSet::new();
-        let mut next_points: VecDeque<(usize, usize)> = VecDeque::from(vec![start]);
-
-        let total_points = self.count_total_points();
-
-        while visited.len() < total_points {
-            let current_points: Vec<(usize, usize)> = next_points.drain(..).collect();
-
-            for current_point in current_points {
-                if current_point == end {
-                    return Some(steps);
-                }
-
-                let neighbors = self.get_neighbors_of(current_point);
-
-                for neighbor in neighbors {
-                    if !visited.contains(&neighbor) && !next_points.contains(&neighbor) {
-                        next_points.push_back(neighbor);
-                    }
-                }
-
-                visited.insert(current_point);
-            }
-
-            steps += 1;
+        if start == end {
+            return Some(0);
         }
 
-        None
+        let parents = self.create_parent_map(start, end);
+
+        let mut step = 0;
+        let mut current_point = parents.get(&end);
+
+        loop {
+            match current_point {
+                Some(&None) => return Some(step),
+                Some(&Some(point)) => {
+                    current_point = parents.get(&point);
+                    step += 1;
+                }
+                None => return None,
+            }
+        }
     }
 }
 
@@ -235,22 +264,34 @@ mod tests {
         }
     }
 
-    mod count_total_points {
+    mod create_parent_map {
         use super::*;
 
         #[test]
-        fn _should_return_0_on_empty_atlas() {
-            let atlas = Atlas::from(vec![vec![]]);
-            assert_eq!(atlas.count_total_points(), 0);
+        fn _should_set_root_parent_to_some_none() {
+            let atlas = Atlas::from(vec!["S"]);
+            let parent_map = atlas.create_parent_map((0, 0), (0, 0));
+            let root_parent = parent_map.get(&(0, 0));
+
+            assert_eq!(root_parent, Some(&None));
         }
 
         #[test]
-        fn _should_return_total_number_points_in_atlas() {
-            let atlas = Atlas::from(vec!["spencer"]);
-            assert_eq!(atlas.count_total_points(), 7);
+        fn _should_set_parent_of_point() {
+            let atlas = Atlas::from(vec!["Sa"]);
+            let parent_map = atlas.create_parent_map((0, 0), (1, 0));
 
-            let atlas = Atlas::from(vec!["abc", "def", "ghi"]);
-            assert_eq!(atlas.count_total_points(), 9);
+            assert_eq!(parent_map.get(&(1, 0)), Some(&Some((0, 0))));
+        }
+
+        #[test]
+        fn _should_set_parent_to_first_found_parent() {
+            let atlas = Atlas::from(vec!["Sab", "adc", "aef", "bce", "cde"]);
+            let parent_map = atlas.create_parent_map((0, 0), (2, 2));
+
+            assert_eq!(parent_map.get(&(1, 1)), Some(&Some((2, 1))));
+            assert_eq!(parent_map.get(&(1, 2)), Some(&Some((1, 1))));
+            assert_eq!(parent_map.get(&(2, 2)), Some(&Some((1, 2))));
         }
     }
 
@@ -307,6 +348,7 @@ mod tests {
             assert_eq!(atlas.count_fewest_steps((0, 0), (2, 1)), Some(5));
         }
 
+        #[test]
         fn _should_return_none_if_no_route() {
             let atlas = Atlas::from(vec!["Sab", "gEc", "fed"]);
 

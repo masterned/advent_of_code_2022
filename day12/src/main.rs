@@ -7,12 +7,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let lines: Vec<&str> = input.lines().collect();
     let atlas = Atlas::from(lines);
 
-    let start = atlas.start.ok_or("Unable to find start")?;
-    let end = atlas.end.ok_or("Unable to find end")?;
-
-    let fewest_steps = atlas
-        .count_fewest_steps(start, end)
-        .ok_or("Unable to find route")?;
+    let fewest_steps = atlas.count_fewest_steps_from_start_to_end()?;
 
     println!("483 is too high");
     println!("Part 1: {fewest_steps}");
