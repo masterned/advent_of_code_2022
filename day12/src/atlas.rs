@@ -1,6 +1,31 @@
-use std::collections::{hash_map::Entry, HashMap, VecDeque};
+use std::{
+    collections::{hash_map::Entry, HashMap, VecDeque},
+    error::Error,
+    fmt::Display,
+};
 
 use crate::altitude::Altitude;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum CountFewestStepsError {
+    CannotFindStart,
+    CannotFindEnd,
+    NoRouteFound,
+}
+
+impl Display for CountFewestStepsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CountFewestStepsError::CannotFindStart => write!(f, "Unable to find start."),
+            CountFewestStepsError::CannotFindEnd => write!(f, "Unable to find end."),
+            CountFewestStepsError::NoRouteFound => {
+                write!(f, "Unable to find route from start to end.")
+            }
+        }
+    }
+}
+
+impl Error for CountFewestStepsError {}
 
 #[derive(Debug)]
 pub struct Atlas {
@@ -96,12 +121,10 @@ impl Atlas {
             .is_some_and(|row| row.get(x).is_some())
     }
 
-    pub fn count_fewest_steps_from_start_to_end(&self) -> Result<usize, &'static str> {
-        let start = self.start.ok_or("Unable to find start")?;
-        let end = self.end.ok_or("Unable to find end")?;
-        let result = self
-            .count_fewest_steps(start, end)
-            .ok_or("Unable to find route")?;
+    pub fn count_fewest_steps_from_start_to_end(&self) -> Result<usize, CountFewestStepsError> {
+        let start = self.start.ok_or(CountFewestStepsError::CannotFindStart)?;
+        let end = self.end.ok_or(CountFewestStepsError::CannotFindEnd)?;
+        let result = self.count_fewest_steps(start, end)?;
         Ok(result)
     }
 
@@ -127,9 +150,7 @@ impl Atlas {
                             break;
                         }
 
-                        if !next_points.contains(&child) {
-                            next_points.push_back(child);
-                        }
+                        next_points.push_back(child);
                     }
                 }
             }
@@ -138,12 +159,19 @@ impl Atlas {
         parents
     }
 
-    fn count_fewest_steps(&self, start: (usize, usize), end: (usize, usize)) -> Option<usize> {
-        if !self.contains_point(start) || !self.contains_point(end) {
-            return None;
+    fn count_fewest_steps(
+        &self,
+        start: (usize, usize),
+        end: (usize, usize),
+    ) -> Result<usize, CountFewestStepsError> {
+        if !self.contains_point(start) {
+            return Err(CountFewestStepsError::CannotFindStart);
+        }
+        if !self.contains_point(end) {
+            return Err(CountFewestStepsError::CannotFindEnd);
         }
         if start == end {
-            return Some(0);
+            return Ok(0);
         }
 
         let parents = self.create_parent_map(start, end);
@@ -153,12 +181,12 @@ impl Atlas {
 
         loop {
             match current_point {
-                Some(&None) => return Some(step),
+                Some(&None) => return Ok(step),
                 Some(&Some(point)) => {
                     current_point = parents.get(&point);
                     step += 1;
                 }
-                None => return None,
+                None => return Err(CountFewestStepsError::NoRouteFound),
             }
         }
     }
@@ -301,25 +329,31 @@ mod tests {
         #[test]
         fn _should_return_some_0_when_start_and_end_are_same() {
             let atlas = Atlas::from(vec![vec!['S', 'E']]);
-            assert_eq!(atlas.count_fewest_steps((0, 0), (0, 0)), Some(0));
+            assert_eq!(atlas.count_fewest_steps((0, 0), (0, 0)), Ok(0));
         }
 
         #[test]
-        fn _should_return_none_if_start_not_in_atlas() {
+        fn _should_return_error_if_start_not_in_atlas() {
             let atlas = Atlas::from(vec![vec!['a']]);
-            assert_eq!(atlas.count_fewest_steps((1, 1), (0, 0)), None);
+            assert_eq!(
+                atlas.count_fewest_steps((1, 1), (0, 0)),
+                Err(CountFewestStepsError::CannotFindStart)
+            );
         }
 
         #[test]
-        fn _should_return_none_if_end_not_in_atlas() {
+        fn _should_return_error_if_end_not_in_atlas() {
             let atlas = Atlas::from(vec![vec!['a']]);
-            assert_eq!(atlas.count_fewest_steps((0, 0), (1, 2)), None);
+            assert_eq!(
+                atlas.count_fewest_steps((0, 0), (1, 2)),
+                Err(CountFewestStepsError::CannotFindEnd)
+            );
         }
 
         #[test]
         fn _should_return_some_1_if_end_next_to_and_reachable_from_start() {
             let atlas = Atlas::from(vec![vec!['a', 'b']]);
-            assert_eq!(atlas.count_fewest_steps((0, 0), (1, 0)), Some(1));
+            assert_eq!(atlas.count_fewest_steps((0, 0), (1, 0)), Ok(1));
         }
 
         #[test]
@@ -331,25 +365,25 @@ mod tests {
             assert_eq!(example.start, Some((0, 0)));
             assert_eq!(example.end, Some((5, 2)));
 
-            assert_eq!(example.count_fewest_steps((0, 0), (5, 2)), Some(31));
+            assert_eq!(example.count_fewest_steps((0, 0), (5, 2)), Ok(31));
         }
 
         #[test]
         fn _should_find_fewest_steps_with_dead_ends() {
             let atlas = Atlas::from(vec!["aaaaaS", "bcdxxa", "xxxxxa"]);
 
-            assert_eq!(atlas.count_fewest_steps((5, 0), (2, 1)), Some(8));
+            assert_eq!(atlas.count_fewest_steps((5, 0), (2, 1)), Ok(8));
         }
 
         #[test]
         fn _should_return_shortest_when_presented_multiple_paths() {
             let atlas = Atlas::from(vec!["Saaaa", "axedb", "bcdcc"]);
 
-            assert_eq!(atlas.count_fewest_steps((0, 0), (2, 1)), Some(5));
+            assert_eq!(atlas.count_fewest_steps((0, 0), (2, 1)), Ok(5));
         }
 
         #[test]
-        fn _should_return_none_if_no_route() {
+        fn _should_return_error_if_no_route() {
             let atlas = Atlas::from(vec!["Sab", "gEc", "fed"]);
 
             assert_eq!(atlas.start, Some((0, 0)));
@@ -357,7 +391,7 @@ mod tests {
 
             assert_eq!(
                 atlas.count_fewest_steps(atlas.start.unwrap(), atlas.end.unwrap()),
-                None
+                Err(CountFewestStepsError::NoRouteFound)
             );
         }
     }
