@@ -2,7 +2,6 @@
 resolver = "2"
 
 members = [
-  "input_reader",
   "day1",
   "day2",
   "day3",
