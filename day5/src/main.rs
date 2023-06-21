@@ -1,8 +1,10 @@
+use std::fs;
+
 use day5::supply_stacks::*;
-use input_reader::read_file_as_lines;
 
 fn main() -> std::io::Result<()> {
-    let lines = read_file_as_lines("./data/day5.txt")?;
+    let input = fs::read_to_string("./data/day5.txt")?;
+    let lines: Vec<&str> = input.lines().collect();
 
     let mut separated_input = lines.split(|line| line.is_empty());
 
