@@ -29,9 +29,6 @@ version = "0.1.0"
 [[package]]
 name = "day4"
 version = "0.1.0"
-dependencies = [
- "input_reader",
-]
 
 [[package]]
 name = "day5"

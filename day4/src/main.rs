@@ -1,12 +1,13 @@
+use std::fs;
+
 use day4::camp_cleanup::*;
-use input_reader::read_file_as_lines;
 
 fn main() -> std::io::Result<()> {
-    let lines = read_file_as_lines("./data/day4.txt")?;
+    let input = fs::read_to_string("./data/day4.txt")?;
+    let lines = input.lines();
     // println!("{lines:?}");
 
     let assignment_str_pairs: Vec<Vec<&str>> = lines
-        .iter()
         .map(|line| line.split(",").collect::<Vec<&str>>())
         .collect();
     // println!("{assignment_str_pairs:?}");
