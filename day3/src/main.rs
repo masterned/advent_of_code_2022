@@ -1,8 +1,10 @@
-use day3::rucksack_reorganization::*;
-use input_reader::read_file_as_lines;
+use std::{error::Error, fs};
 
-fn main() {
-    let lines = read_file_as_lines("./data/day3.txt").unwrap();
+use day3::rucksack_reorganization::*;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let input = fs::read_to_string("./data/day3.txt")?;
+    let lines: Vec<&str> = input.lines().collect();
 
     let pairs: Vec<(&str, &str)> = lines.iter().map(|line| pair_line(line)).collect();
     // println!("{pairs:?}");
@@ -27,7 +29,7 @@ fn main() {
         .map(|group| {
             group
                 .iter()
-                .map(|items| items.as_str())
+                .map(|&items| items.clone())
                 .collect::<Vec<&str>>()
         })
         .collect();
@@ -44,4 +46,6 @@ fn main() {
 
     let total_priorities: i32 = priorities.iter().sum();
     println!("Part 2: {total_priorities}");
+
+    Ok(())
 }
