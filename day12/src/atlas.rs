@@ -2,6 +2,7 @@ use std::{
     collections::{hash_map::Entry, HashMap, VecDeque},
     error::Error,
     fmt::Display,
+    str::FromStr,
 };
 
 use crate::altitude::Altitude;
@@ -32,6 +33,14 @@ pub struct Atlas {
     altitudes: Vec<Vec<Option<Altitude>>>,
     start: Option<(usize, usize)>,
     end: Option<(usize, usize)>,
+}
+
+impl FromStr for Atlas {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(s.lines().collect::<Vec<&str>>().into())
+    }
 }
 
 impl From<Vec<&str>> for Atlas {
