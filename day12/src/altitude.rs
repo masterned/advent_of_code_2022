@@ -16,7 +16,7 @@ impl Altitude {
                     Altitude::Height(other_height) => *other_height == self_height + 1,
                 },
                 Altitude::Start => other == &Altitude::Height(1),
-                _ => false,
+                Altitude::End => false,
             })
     }
 }
