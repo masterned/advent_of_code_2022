@@ -91,43 +91,65 @@ impl Atlas {
         *self.altitudes.get(y).and_then(|row| row.get(x))?
     }
 
-    fn get_neighbors_of(&self, (x, y): (usize, usize)) -> Vec<(usize, usize)> {
-        let mut neighbors = vec![];
+    fn contains_point(&self, point: (usize, usize)) -> bool {
+        self.get_altitude(point).is_some()
+    }
 
-        if let Some(altitude) = self.get_altitude((x, y)) {
-            if y > 0 {
-                if let Some(north) = self.get_altitude((x, y - 1)) {
-                    if altitude.can_reach(&north) {
-                        neighbors.push((x, y - 1));
-                    }
-                }
-            }
-            if let Some(east) = self.get_altitude((x + 1, y)) {
-                if altitude.can_reach(&east) {
-                    neighbors.push((x + 1, y));
-                }
-            }
-            if let Some(south) = self.get_altitude((x, y + 1)) {
-                if altitude.can_reach(&south) {
-                    neighbors.push((x, y + 1));
-                }
-            }
-            if x > 0 {
-                if let Some(west) = self.get_altitude((x - 1, y)) {
-                    if altitude.can_reach(&west) {
-                        neighbors.push((x - 1, y));
-                    }
+    fn get_neighbor_coord_if_exists(
+        &self,
+        (x, y): (usize, usize),
+        (delta_x, delta_y): (isize, isize),
+    ) -> Option<(usize, usize)> {
+        if self.contains_point((x, y)) {
+            let checked_x = if delta_x.is_negative() {
+                x.checked_sub(delta_x.unsigned_abs())
+            } else {
+                x.checked_add_signed(delta_x)
+            };
+
+            let checked_y = if delta_y.is_negative() {
+                y.checked_sub(delta_y.unsigned_abs())
+            } else {
+                y.checked_add_signed(delta_y)
+            };
+
+            if let (Some(neighbor_x), Some(neighbor_y)) = (checked_x, checked_y) {
+                if self.contains_point((neighbor_x, neighbor_y)) {
+                    return Some((neighbor_x, neighbor_y));
                 }
             }
         }
 
-        neighbors
+        None
     }
 
-    fn contains_point(&self, (x, y): (usize, usize)) -> bool {
-        self.altitudes
-            .get(y)
-            .is_some_and(|row| row.get(x).is_some())
+    fn get_neighbor_altitude_if_reachable(
+        &self,
+        point: (usize, usize),
+        relative_point: (isize, isize),
+    ) -> Option<(usize, usize)> {
+        self.get_altitude(point).and_then(|altitude| {
+            self.get_neighbor_coord_if_exists(point, relative_point)
+                .and_then(|neighbor_coords| {
+                    self.get_altitude(neighbor_coords)
+                        .and_then(|neighbor_altitude| {
+                            if altitude.can_reach(&neighbor_altitude) {
+                                Some(neighbor_coords)
+                            } else {
+                                None
+                            }
+                        })
+                })
+        })
+    }
+
+    fn get_all_reachable_neighbors_of(&self, point: (usize, usize)) -> Vec<(usize, usize)> {
+        [(0, -1), (1, 0), (0, 1), (-1, 0)]
+            .iter()
+            .filter_map(|&relative_point| {
+                self.get_neighbor_altitude_if_reachable(point, relative_point)
+            })
+            .collect()
     }
 
     pub fn count_fewest_steps_from_start_to_end(&self) -> Result<usize, CountFewestStepsError> {
@@ -148,7 +170,7 @@ impl Atlas {
 
         while !next_points.is_empty() {
             if let Some(current_point) = next_points.pop_front() {
-                let children = self.get_neighbors_of(current_point);
+                let children = self.get_all_reachable_neighbors_of(current_point);
 
                 for child in children {
                     if let Entry::Vacant(entry) = parents.entry(child) {
@@ -233,19 +255,19 @@ mod tests {
         }
     }
 
-    mod get_neighbors_of {
+    mod get_all_reachable_neighbors_of {
         use super::*;
 
         #[test]
         fn _should_return_empty_vec_on_no_neighbors() {
             let matrix = Atlas::from(vec![vec!['S', 'E']]);
-            assert_eq!(matrix.get_neighbors_of((0, 0)), vec![]);
+            assert_eq!(matrix.get_all_reachable_neighbors_of((0, 0)), vec![]);
         }
 
         #[test]
         fn _should_only_return_reachable_neighbors() {
             let matrix = Atlas::from(vec![vec!['S', 'E'], vec!['a']]);
-            assert_eq!(matrix.get_neighbors_of((0, 0)), vec![(0, 1)]);
+            assert_eq!(matrix.get_all_reachable_neighbors_of((0, 0)), vec![(0, 1)]);
         }
 
         #[test]
@@ -257,7 +279,7 @@ mod tests {
             ]);
 
             assert_eq!(
-                matrix.get_neighbors_of((1, 1)),
+                matrix.get_all_reachable_neighbors_of((1, 1)),
                 vec![(1, 0), (2, 1), (1, 2), (0, 1)]
             );
         }
@@ -266,7 +288,7 @@ mod tests {
         fn _neighbors_of_same_height_are_reachable() {
             let matrix = Atlas::from(vec![vec!['S', 'a', 'a'], vec!['E', 'a']]);
             assert_eq!(
-                matrix.get_neighbors_of((1, 0)),
+                matrix.get_all_reachable_neighbors_of((1, 0)),
                 vec![(2, 0), (1, 1), (0, 0)]
             );
         }
