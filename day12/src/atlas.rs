@@ -7,6 +7,14 @@ use std::{
 
 use crate::altitude::Altitude;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CardinalDirection {
+    North,
+    East,
+    South,
+    West,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum CountFewestStepsError {
     CannotFindStart,
@@ -98,38 +106,39 @@ impl Atlas {
     fn get_neighbor_coord_if_exists(
         &self,
         (x, y): (usize, usize),
-        (delta_x, delta_y): (isize, isize),
+        cardinal_direction: CardinalDirection,
     ) -> Option<(usize, usize)> {
-        if self.contains_point((x, y)) {
-            let checked_x = if delta_x.is_negative() {
-                x.checked_sub(delta_x.unsigned_abs())
-            } else {
-                x.checked_add_signed(delta_x)
-            };
-
-            let checked_y = if delta_y.is_negative() {
-                y.checked_sub(delta_y.unsigned_abs())
-            } else {
-                y.checked_add_signed(delta_y)
-            };
-
-            if let (Some(neighbor_x), Some(neighbor_y)) = (checked_x, checked_y) {
-                if self.contains_point((neighbor_x, neighbor_y)) {
-                    return Some((neighbor_x, neighbor_y));
-                }
-            }
+        if !self.contains_point((x, y)) {
+            return None;
         }
 
-        None
+        match cardinal_direction {
+            CardinalDirection::North => {
+                if y == 0 {
+                    return None;
+                }
+
+                Some((x, y - 1))
+            }
+            CardinalDirection::East => Some((x + 1, y)),
+            CardinalDirection::South => Some((x, y + 1)),
+            CardinalDirection::West => {
+                if x == 0 {
+                    return None;
+                }
+
+                Some((x - 1, y))
+            }
+        }
     }
 
     fn get_neighbor_altitude_if_reachable(
         &self,
         point: (usize, usize),
-        relative_point: (isize, isize),
+        cardinal_direction: CardinalDirection,
     ) -> Option<(usize, usize)> {
         self.get_altitude(point).and_then(|altitude| {
-            self.get_neighbor_coord_if_exists(point, relative_point)
+            self.get_neighbor_coord_if_exists(point, cardinal_direction)
                 .and_then(|neighbor_coords| {
                     self.get_altitude(neighbor_coords)
                         .and_then(|neighbor_altitude| {
@@ -144,12 +153,17 @@ impl Atlas {
     }
 
     fn get_all_reachable_neighbors_of(&self, point: (usize, usize)) -> Vec<(usize, usize)> {
-        [(0, -1), (1, 0), (0, 1), (-1, 0)]
-            .iter()
-            .filter_map(|&relative_point| {
-                self.get_neighbor_altitude_if_reachable(point, relative_point)
-            })
-            .collect()
+        [
+            CardinalDirection::North,
+            CardinalDirection::East,
+            CardinalDirection::South,
+            CardinalDirection::West,
+        ]
+        .iter()
+        .filter_map(|&cardinal_direction| {
+            self.get_neighbor_altitude_if_reachable(point, cardinal_direction)
+        })
+        .collect()
     }
 
     pub fn count_fewest_steps_from_start_to_end(&self) -> Result<usize, CountFewestStepsError> {
