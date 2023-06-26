@@ -1,3 +1,5 @@
+use std::{error::Error, fmt::Display};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Altitude {
     Start,
@@ -21,8 +23,21 @@ impl Altitude {
     }
 }
 
+#[derive(Debug)]
+pub enum ParseError {
+    CharacterOutOfRange,
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Character outside of Altitude range.")
+    }
+}
+
+impl Error for ParseError {}
+
 impl TryFrom<char> for Altitude {
-    type Error = &'static str;
+    type Error = ParseError;
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
         match value {
@@ -32,7 +47,7 @@ impl TryFrom<char> for Altitude {
                 if let Some(height) = (c as usize).checked_sub(96) {
                     Ok(Altitude::Height(height))
                 } else {
-                    Err("Cannot parse Altitude")
+                    Err(ParseError::CharacterOutOfRange)
                 }
             }
         }
@@ -44,7 +59,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn _should_create_altitude_from_char() -> Result<(), &'static str> {
+    fn _should_create_altitude_from_char() -> Result<(), Box<dyn Error>> {
         let start = Altitude::try_from('S')?;
         assert_eq!(start, Altitude::Start);
 
@@ -118,7 +133,7 @@ mod tests {
         }
 
         #[test]
-        fn _should_return_true_if_destination_is_one_higher() -> Result<(), &'static str> {
+        fn _should_return_true_if_destination_is_one_higher() -> Result<(), Box<dyn Error>> {
             let start = Altitude::Start;
             let h0 = Altitude::Height(1);
             let h1 = Altitude::Height(2);
@@ -133,7 +148,7 @@ mod tests {
         }
 
         #[test]
-        fn _end_should_always_be_able_to_reach_other_altitudes() -> Result<(), &'static str> {
+        fn _end_should_always_be_able_to_reach_other_altitudes() -> Result<(), Box<dyn Error>> {
             let start = Altitude::Start;
             let h0 = Altitude::Height(1);
             let h1 = Altitude::Height(2);
@@ -151,7 +166,7 @@ mod tests {
         }
 
         #[test]
-        fn _other_altitudes_should_always_be_able_to_reach_start() -> Result<(), &'static str> {
+        fn _other_altitudes_should_always_be_able_to_reach_start() -> Result<(), Box<dyn Error>> {
             let start = Altitude::Start;
             let h0 = Altitude::Height(1);
             let h1 = Altitude::Height(2);
@@ -169,7 +184,8 @@ mod tests {
         }
 
         #[test]
-        fn _should_return_false_if_destination_more_than_one_higher() -> Result<(), &'static str> {
+        fn _should_return_false_if_destination_more_than_one_higher() -> Result<(), Box<dyn Error>>
+        {
             let start = Altitude::Start;
             let h0 = Altitude::Height(1);
             let h1 = Altitude::Height(2);
