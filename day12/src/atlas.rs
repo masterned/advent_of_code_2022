@@ -143,19 +143,15 @@ impl Atlas {
         point: (usize, usize),
         cardinal_direction: CardinalDirection,
     ) -> Option<(usize, usize)> {
-        self.get_altitude(point).and_then(|altitude| {
-            self.get_neighbor_coord_if_exists(point, cardinal_direction)
-                .and_then(|neighbor_coords| {
-                    self.get_altitude(neighbor_coords)
-                        .and_then(|neighbor_altitude| {
-                            if altitude.can_reach(&neighbor_altitude) {
-                                Some(neighbor_coords)
-                            } else {
-                                None
-                            }
-                        })
-                })
-        })
+        let altitude = self.get_altitude(point)?;
+        let neighbor_coords = self.get_neighbor_coord_if_exists(point, cardinal_direction)?;
+        let neighbor_altitude = self.get_altitude(neighbor_coords)?;
+
+        if altitude.can_reach(&neighbor_altitude) {
+            Some(neighbor_coords)
+        } else {
+            None
+        }
     }
 
     fn get_all_reachable_neighbors_of(&self, point: (usize, usize)) -> Vec<(usize, usize)> {
