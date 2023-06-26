@@ -112,24 +112,30 @@ impl Atlas {
             return None;
         }
 
-        match cardinal_direction {
+        let neighbor_coord = match cardinal_direction {
             CardinalDirection::North => {
                 if y == 0 {
                     return None;
                 }
 
-                Some((x, y - 1))
+                (x, y - 1)
             }
-            CardinalDirection::East => Some((x + 1, y)),
-            CardinalDirection::South => Some((x, y + 1)),
+            CardinalDirection::East => (x + 1, y),
+            CardinalDirection::South => (x, y + 1),
             CardinalDirection::West => {
                 if x == 0 {
                     return None;
                 }
 
-                Some((x - 1, y))
+                (x - 1, y)
             }
+        };
+
+        if !self.contains_point(neighbor_coord) {
+            return None;
         }
+
+        Some(neighbor_coord)
     }
 
     fn get_neighbor_altitude_if_reachable(
@@ -266,6 +272,106 @@ mod tests {
         fn _should_set_end_to_none_if_missing() {
             let atlas = Atlas::from(vec![vec!['a', 'b', 'c']]);
             assert_eq!(atlas.end, None);
+        }
+    }
+
+    mod get_neighbor_coord_if_exists {
+        use super::*;
+
+        #[test]
+        fn _should_return_none_on_empty_atlas() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::North),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::East),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::South),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::West),
+                None
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn _should_return_none_if_point_not_in_atlas() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "no second row".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 1), CardinalDirection::North),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 1), CardinalDirection::East),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 1), CardinalDirection::South),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 1), CardinalDirection::West),
+                None
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn _should_return_none_if_neighbor_off_atlas() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "a".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::North),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::East),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::South),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((0, 0), CardinalDirection::West),
+                None
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn _should_return_coord_of_existing_neighbor() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "abc\ndef\nghi".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((1, 1), CardinalDirection::North),
+                Some((1, 0))
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((1, 1), CardinalDirection::East),
+                Some((2, 1))
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((1, 1), CardinalDirection::South),
+                Some((1, 2))
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_exists((1, 1), CardinalDirection::West),
+                Some((0, 1))
+            );
+
+            Ok(())
         }
     }
 
