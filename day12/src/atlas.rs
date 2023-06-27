@@ -138,7 +138,7 @@ impl Atlas {
         Some(neighbor_coord)
     }
 
-    fn get_neighbor_altitude_if_reachable(
+    fn get_neighbor_coord_if_reachable(
         &self,
         point: (usize, usize),
         cardinal_direction: CardinalDirection,
@@ -163,7 +163,7 @@ impl Atlas {
         ]
         .iter()
         .filter_map(|&cardinal_direction| {
-            self.get_neighbor_altitude_if_reachable(point, cardinal_direction)
+            self.get_neighbor_coord_if_reachable(point, cardinal_direction)
         })
         .collect()
     }
@@ -365,6 +365,106 @@ mod tests {
             assert_eq!(
                 atlas.get_neighbor_coord_if_exists((1, 1), CardinalDirection::West),
                 Some((0, 1))
+            );
+
+            Ok(())
+        }
+    }
+
+    mod get_neighbor_coord_if_reachable {
+        use super::*;
+
+        #[test]
+        fn _should_return_none_on_empty_atlas() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::North),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::East),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::South),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::West),
+                None
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn _should_return_none_if_neighbor_off_atlas() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "a".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::North),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::East),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::South),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((0, 0), CardinalDirection::West),
+                None
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn _should_return_some_neighbor_coord_if_reachable() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "xax\naSa\nxax".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::North),
+                Some((1, 0))
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::East),
+                Some((2, 1))
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::South),
+                Some((1, 2))
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::West),
+                Some((0, 1))
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn _should_return_none_if_neighbor_not_reachable() -> Result<(), Box<dyn Error>> {
+            let atlas: Atlas = "xxx\nxSx\nxxx".parse()?;
+
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::North),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::East),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::South),
+                None
+            );
+            assert_eq!(
+                atlas.get_neighbor_coord_if_reachable((1, 1), CardinalDirection::West),
+                None
             );
 
             Ok(())
