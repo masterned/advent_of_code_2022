@@ -34,13 +34,8 @@ impl TryFrom<char> for Altitude {
         match value {
             'S' => Ok(Altitude::Start),
             'E' => Ok(Altitude::End),
-            c => {
-                if let Some(height) = (c as usize).checked_sub(96) {
-                    Ok(Altitude::Height(height))
-                } else {
-                    Err(ParseError::CharacterOutOfRange)
-                }
-            }
+            c if c.is_alphabetic() && c.is_lowercase() => Ok(Self::Height(c as usize - 96)),
+            _ => Err(ParseError::CharacterOutOfRange),
         }
     }
 }
