@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt, ops};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Altitude {
@@ -10,16 +10,7 @@ pub enum Altitude {
 impl Altitude {
     #[must_use]
     pub fn can_reach(&self, other: &Altitude) -> bool {
-        self >= other
-            || (match self {
-                Altitude::Height(self_height) => match other {
-                    Altitude::Start => true,
-                    Altitude::End => *self_height >= 26,
-                    Altitude::Height(other_height) => *other_height == self_height + 1,
-                },
-                Altitude::Start => other == &Altitude::Height(1),
-                Altitude::End => false,
-            })
+        self >= &(*other - 1)
     }
 }
 
@@ -28,8 +19,8 @@ pub enum ParseError {
     CharacterOutOfRange,
 }
 
-impl Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Character outside of Altitude range.")
     }
 }
@@ -50,6 +41,19 @@ impl TryFrom<char> for Altitude {
                     Err(ParseError::CharacterOutOfRange)
                 }
             }
+        }
+    }
+}
+
+impl ops::Sub<usize> for Altitude {
+    type Output = Altitude;
+
+    fn sub(self, rhs: usize) -> Self::Output {
+        match self {
+            Altitude::Height(lhs) if lhs > rhs => Altitude::Height(lhs - rhs),
+            Altitude::End if rhs <= 26 => Altitude::Height(27 - rhs),
+            _ if rhs == 0 => self,
+            _ => Altitude::Start,
         }
     }
 }
