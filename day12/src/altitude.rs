@@ -57,37 +57,41 @@ impl ops::Sub<usize> for Altitude {
 mod tests {
     use super::*;
 
-    #[test]
-    fn _should_create_altitude_from_char() -> Result<(), Box<dyn Error>> {
-        let start = Altitude::try_from('S')?;
-        assert_eq!(start, Altitude::Start);
+    mod try_from {
+        use super::*;
 
-        let end = Altitude::try_from('E')?;
-        assert_eq!(end, Altitude::End);
+        #[test]
+        fn _should_create_ok_altitude_from_lowercase_letter_uppercase_s_or_e(
+        ) -> Result<(), Box<dyn Error>> {
+            let start = Altitude::try_from('S')?;
+            assert_eq!(start, Altitude::Start);
 
-        let none = Altitude::try_from('?').ok();
-        assert_eq!(none, None);
+            let end = Altitude::try_from('E')?;
+            assert_eq!(end, Altitude::End);
 
-        let h0 = Altitude::try_from('s')?;
-        assert_eq!(h0, Altitude::Height(19));
+            let h0 = Altitude::try_from('s')?;
+            assert_eq!(h0, Altitude::Height(19));
 
-        let h1 = Altitude::try_from('z')?;
-        assert_eq!(h1, Altitude::Height(26));
+            let h1 = Altitude::try_from('z')?;
+            assert_eq!(h1, Altitude::Height(26));
 
-        Ok(())
-    }
+            Ok(())
+        }
 
-    #[test]
-    fn _should_be_able_to_compare_altitudes() {
-        let start = Altitude::Start;
-        let end = Altitude::End;
-        let middle0 = Altitude::Height(42);
-        let middle1 = Altitude::Height(69);
+        #[test]
+        fn _should_return_error_if_char_not_lowercase_letter_uppercase_s_or_e() {
+            let other_capital_altitude = Altitude::try_from('A');
+            assert!(matches!(
+                other_capital_altitude,
+                Err(ParseError::CharacterOutOfRange)
+            ));
 
-        assert!(start < end);
-        assert!(start < middle0);
-        assert!(middle0 < middle1);
-        assert!(middle1 < end);
+            let punctuation = Altitude::try_from('?');
+            assert!(matches!(punctuation, Err(ParseError::CharacterOutOfRange)));
+
+            let number = Altitude::try_from('4');
+            assert!(matches!(number, Err(ParseError::CharacterOutOfRange)));
+        }
     }
 
     mod can_reach {
