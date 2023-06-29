@@ -44,10 +44,13 @@ impl ops::Sub<usize> for Altitude {
     type Output = Altitude;
 
     fn sub(self, rhs: usize) -> Self::Output {
+        if rhs == 0 {
+            return self;
+        }
+
         match self {
             Altitude::Height(lhs) if lhs > rhs => Altitude::Height(lhs - rhs),
             Altitude::End if rhs <= 26 => Altitude::Height(27 - rhs),
-            _ if rhs == 0 => self,
             _ => Altitude::Start,
         }
     }
@@ -91,6 +94,102 @@ mod tests {
 
             let number = Altitude::try_from('4');
             assert!(matches!(number, Err(ParseError::CharacterOutOfRange)));
+        }
+    }
+
+    mod sub {
+        use super::*;
+
+        #[test]
+        fn _anything_sub_0_should_be_itself() {
+            let start = Altitude::Start;
+            let result = start - 0;
+            assert_eq!(result, Altitude::Start);
+
+            let height = Altitude::Height(5);
+            let result = height - 0;
+            assert_eq!(result, Altitude::Height(5));
+
+            let end = Altitude::End;
+            let result = end - 0;
+            assert_eq!(result, Altitude::End);
+        }
+
+        #[test]
+        fn _subtracting_anything_from_start_should_return_start() {
+            let start = Altitude::Start;
+
+            let result = start - 1;
+            assert_eq!(result, Altitude::Start);
+
+            let result = start - 18;
+            assert_eq!(result, Altitude::Start);
+
+            let result = start - 200;
+            assert_eq!(result, Altitude::Start);
+
+            let result = start - 520;
+            assert_eq!(result, Altitude::Start);
+
+            let result = start - 9001;
+            assert_eq!(result, Altitude::Start);
+        }
+
+        #[test]
+        fn _subtracting_value_greater_than_or_equal_to_height_should_return_start() {
+            let height = Altitude::Height(1);
+            let result = height - 1;
+            assert_eq!(result, Altitude::Start);
+
+            let height = Altitude::Height(1);
+            let result = height - 100;
+            assert_eq!(result, Altitude::Start);
+
+            let height = Altitude::Height(10);
+            let result = height - 11;
+            assert_eq!(result, Altitude::Start);
+        }
+
+        #[test]
+        fn _subtracting_27_or_greater_from_end_should_return_start() {
+            let end = Altitude::End;
+
+            let result = end - 27;
+            assert_eq!(result, Altitude::Start);
+
+            let result = end - 30;
+            assert_eq!(result, Altitude::Start);
+
+            let result = end - 9001;
+            assert_eq!(result, Altitude::Start);
+        }
+
+        #[test]
+        fn _subtracting_value_less_than_height_should_return_new_height() {
+            let height = Altitude::Height(26);
+
+            let result = height - 1;
+            assert_eq!(result, Altitude::Height(25));
+
+            let result = height - 13;
+            assert_eq!(result, Altitude::Height(13));
+
+            let result = height - 25;
+            assert_eq!(result, Altitude::Height(1));
+        }
+
+        #[test]
+        fn _subtracting_less_than_27_from_end_should_return_new_height() {
+            let end = Altitude::End;
+
+            let result = end - 1;
+            assert_eq!(result, Altitude::Height(26));
+
+            let result = end - 14;
+            assert_eq!(result, Altitude::Height(13));
+
+            let result = end - 26;
+            assert_eq!(result, Altitude::Height(1));
         }
     }
 
