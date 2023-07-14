@@ -7,6 +7,8 @@ use std::{
 
 use crate::altitude::Altitude;
 
+type Point = (usize, usize);
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum CardinalDirection {
     North,
@@ -39,8 +41,8 @@ impl Error for CountFewestStepsError {}
 #[derive(Debug)]
 pub struct Atlas {
     altitudes: Vec<Vec<Option<Altitude>>>,
-    start: Option<(usize, usize)>,
-    end: Option<(usize, usize)>,
+    start: Option<Point>,
+    end: Option<Point>,
 }
 
 impl FromStr for Atlas {
@@ -95,19 +97,19 @@ impl From<Vec<Vec<char>>> for Atlas {
 }
 
 impl Atlas {
-    fn get_altitude(&self, (x, y): (usize, usize)) -> Option<Altitude> {
+    fn get_altitude(&self, (x, y): Point) -> Option<Altitude> {
         *self.altitudes.get(y).and_then(|row| row.get(x))?
     }
 
-    fn contains_point(&self, point: (usize, usize)) -> bool {
+    fn contains_point(&self, point: Point) -> bool {
         self.get_altitude(point).is_some()
     }
 
     fn get_neighbor_coord_if_exists(
         &self,
-        (x, y): (usize, usize),
+        (x, y): Point,
         cardinal_direction: CardinalDirection,
-    ) -> Option<(usize, usize)> {
+    ) -> Option<Point> {
         if !self.contains_point((x, y)) {
             return None;
         }
@@ -140,9 +142,9 @@ impl Atlas {
 
     fn get_neighbor_coord_if_reachable(
         &self,
-        point: (usize, usize),
+        point: Point,
         cardinal_direction: CardinalDirection,
-    ) -> Option<(usize, usize)> {
+    ) -> Option<Point> {
         let altitude = self.get_altitude(point)?;
         let neighbor_coords = self.get_neighbor_coord_if_exists(point, cardinal_direction)?;
         let neighbor_altitude = self.get_altitude(neighbor_coords)?;
@@ -154,7 +156,7 @@ impl Atlas {
         }
     }
 
-    fn get_all_reachable_neighbors_of(&self, point: (usize, usize)) -> Vec<(usize, usize)> {
+    fn get_all_reachable_neighbors_of(&self, point: Point) -> Vec<Point> {
         [
             CardinalDirection::North,
             CardinalDirection::East,
@@ -175,11 +177,7 @@ impl Atlas {
         Ok(result)
     }
 
-    fn create_parent_map(
-        &self,
-        start: (usize, usize),
-        end: (usize, usize),
-    ) -> HashMap<(usize, usize), Option<(usize, usize)>> {
+    fn create_parent_map(&self, start: Point, end: Point) -> HashMap<Point, Option<Point>> {
         let mut parents = HashMap::from([(start, None)]);
 
         let mut next_points = VecDeque::from(vec![start]);
@@ -206,11 +204,7 @@ impl Atlas {
         parents
     }
 
-    fn count_fewest_steps(
-        &self,
-        start: (usize, usize),
-        end: (usize, usize),
-    ) -> Result<usize, CountFewestStepsError> {
+    fn count_fewest_steps(&self, start: Point, end: Point) -> Result<usize, CountFewestStepsError> {
         if !self.contains_point(start) {
             return Err(CountFewestStepsError::CannotFindStart);
         }
