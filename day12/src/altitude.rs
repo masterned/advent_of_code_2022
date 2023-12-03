@@ -49,8 +49,8 @@ impl ops::Sub<usize> for Altitude {
         }
 
         match self {
-            Altitude::Height(lhs) if lhs > rhs => Altitude::Height(lhs - rhs),
-            Altitude::End if rhs <= 26 => Altitude::Height(27 - rhs),
+            Altitude::Height(lhs) if lhs > rhs + 1 => Altitude::Height(lhs - rhs),
+            Altitude::End if rhs <= 25 => Altitude::Height(26 - rhs),
             _ => Altitude::Start,
         }
     }
